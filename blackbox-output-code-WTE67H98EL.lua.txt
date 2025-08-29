@@ -1,0 +1,42 @@
+local AIM_RADIUS=35
+local AIM_STRENGTH=0.25
+local TEAM_CHECK=true
+local player=game.Players.LocalPlayer
+local camera=workspace.CurrentCamera
+local runService=game:GetService("RunService")
+local UIS=game:GetService("User InputService")
+
+local function getClosestTarget()
+ local mouseLocation=UIS:GetMouseLocation()
+ local closestChar=nil
+ local closestDist=AIM_RADIUS
+ for _,plr in pairs(game.Players:GetPlayers()) do
+  if plr~=player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+   if TEAM_CHECK and plr.Team==player.Team then
+    -- skip teammates
+   else
+    local root=plr.Character.HumanoidRootPart
+    local screenPos,onScreen=camera:WorldToViewportPoint(root.Position)
+    if onScreen then
+     local dist=(Vector2.new(screenPos.X,screenPos.Y)-mouseLocation).Magnitude
+     if dist<closestDist then
+      closestDist=dist
+      closestChar=plr.Character
+     end
+    end
+   end
+  end
+ end
+ return closestChar
+end
+
+runService.RenderStepped:Connect(function()
+ local target=getClosestTarget()
+ if target and target:FindFirstChild("HumanoidRootPart") then
+  local root=target.HumanoidRootPart
+  local targetPos=camera:WorldToViewportPoint(root.Position)
+  local mouseLocation=UIS:GetMouseLocation()
+  local correction=(Vector2.new(targetPos.X,targetPos.Y)-mouseLocation)*AIM_STRENGTH
+  UIS:MouseDelta(correction.X,correction.Y)
+ end
+end)
